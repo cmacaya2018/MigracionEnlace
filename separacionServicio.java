@@ -108,7 +108,9 @@ public class separacionServicio {
 		String servicioPrincipalRespalo = esServicioRespaldo(servicio, conn);
 		//String servicioPrincipalRespalo = null;
 		
-		if (!esDireccionOrigenRedCliente(servicio,conn)) {
+		List<String> listaRedCliente = obtieneListaRedCliente(conn);
+		
+		if (!esDireccionOrigenRedCliente(servicio,listaRedCliente,conn)) {
 			
 			if (!esEntronqueOrigen(servicio, conn)) {
 			
@@ -157,7 +159,9 @@ public class separacionServicio {
 		String servicioPrincipalRespalo = esServicioRespaldo(servicio, conn);
 		//String servicioPrincipalRespalo = null;
 		
-		if (!esDireccionOrigenRedCliente(servicio,conn)) {
+		List<String> listaRedCliente = obtieneListaRedCliente(conn);
+		
+		if (!esDireccionOrigenRedCliente(servicio,listaRedCliente,conn)) {
 			
 			if (!esEntronqueOrigen(servicio, conn)) {
 				insertaRedPrivada(null, servicio,"OK",null,"Conexión Privada","10001322",null,"ORIGEN",conn);
@@ -398,7 +402,7 @@ public class separacionServicio {
 		return codigoServicioPrincipal;
 	}
 
-	private static boolean esDireccionOrigenRedCliente(TipoDTO servicio, Connection conn) {
+	private static boolean esDireccionOrigenRedCliente(TipoDTO servicio, List<String> lRedCliente, Connection conn) {
 			boolean esRedCliente = false;
 		
 		
@@ -411,20 +415,26 @@ public class separacionServicio {
 				"  COMUN.MAE_DIRECCIONES MD\n" + 
 				"WHERE\n" + 
 				"  S.COD_SERVICIO = ?\n" + 
-				"  AND MD.COD_DIRECCION = S.COD_DIRECCION_ORIGEN\n" + 
-				"  AND UPPER(MD.DIRECCION) LIKE '%RED CLIENTE%'";
+				"  AND MD.COD_DIRECCION = S.COD_DIRECCION_ORIGEN\n";
 
+			if(lRedCliente.size()>0){
+				sql = sql + " AND ";
+				
+				for(String redCliente: lRedCliente){
+					sql = sql + " UPPER(MD.DIRECCION) LIKE '%" + redCliente +"%' OR";
+				}
+				
+				sql = sql.substring(0, (sql.length()-2));
+			}
 			
 			PreparedStatement stmt = conn.prepareStatement(sql);
 			stmt.setString(1, servicio.getCodValor());
 		
 			ResultSet rs = stmt.executeQuery();
-			
 	
 			if (rs.next()) {
 					esRedCliente = true;
 			}
-
 			
 			rs.close();
 			rs = null;
@@ -1270,6 +1280,35 @@ public class separacionServicio {
 		} 
 		
 		return lServicios;
+	}
+	
+	private static List<String> obtieneListaRedCliente(Connection conn) {
+
+		List <String> lRedCliente = new ArrayList<String>();
+		
+		try {
+			String sql =
+				"select tv.valor VALOR from comun.tabla_valores tv " +
+				"where tv.nombre_tabla = 'DIR_RED_CLIENTE'";
+			
+			PreparedStatement stmt = conn.prepareStatement(sql);
+			ResultSet rs = stmt.executeQuery();			
+	
+			while (rs.next()) {
+				lRedCliente.add(rs.getString("VALOR"));				
+			}
+			
+			stmt.close();
+			stmt = null;
+			
+			rs.close();
+			rs = null;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} 
+		
+		return lRedCliente;
 	}
 
 	private static void cargaEquiposCaso1() {
