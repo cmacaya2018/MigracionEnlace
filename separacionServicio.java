@@ -27,33 +27,32 @@ public class separacionServicio {
 			//List <TipoDTO> serviciosDuplicados = obtieneListaServiciosDuplicados(conn);
 			List <TipoDTO> lServicios = obtieneListaServicio(conn);	
 			
-			conn.close();
-			conn = null;
+			List<String> listaRedCliente = obtieneListaRedCliente(conn);
 			
 			for (TipoDTO servicio : lServicios) {
 				
 				switch (Integer.parseInt(servicio.getValor())) {
 
 					case Constantes.INTERNET_EMPRESA:
-						ejecutaCasoInternetEmpresa(servicio);
+						ejecutaCasoInternetEmpresa(servicio, conn);
 						break;
 					case Constantes.INTERNET_GRANDES_CLIENTES:
-						ejecutaCasoInternetGandesClientes(servicio);
+						ejecutaCasoInternetGandesClientes(servicio, conn);
 						break;
 					case Constantes.INTERNET_EMPRENDEDOR:
-						ejecutaCasoInternetEmprendedor(servicio);
+						ejecutaCasoInternetEmprendedor(servicio, conn);
 						break;
 					case Constantes.PLAN_DATACENTER:
-						ejecutaCasoPlanDatacenter(servicio);
+						ejecutaCasoPlanDatacenter(servicio, conn);
 						break;
 					case Constantes.RED_IP_UTP:
-						ejecutaCasoRedIpUtp(servicio);	
+						ejecutaCasoRedIpUtp(servicio, conn);	
 						break;
 					case Constantes.RED_IP_FO:
-						ejecutaCasoRedIpFo(servicio);
+						ejecutaCasoRedIpFo(servicio, listaRedCliente, conn);
 						break;
 					case Constantes.RED_IP_CU:
-						ejecutaCasoRedIpCu(servicio);
+						ejecutaCasoRedIpCu(servicio, listaRedCliente, conn);
 						break;
 						
 					case Constantes.MALL_1525:
@@ -80,15 +79,15 @@ public class separacionServicio {
 					case Constantes.MALL_2802:
 					case Constantes.MALL_2922:
 					case Constantes.MALL_2963:
-						ejecutaCasoMall(servicio);	
+						ejecutaCasoMall(servicio, conn);	
 						break;			
 						
 					case Constantes.IP_TV_EMPRESAS:
-						ejecutaCasoIPTVEmpresas(servicio);
+						ejecutaCasoIPTVEmpresas(servicio, conn);
 						break;
 						
 					case Constantes.INTERNET_ADVANCE:
-						ejecutaCasoPlanInternetAdvanced(servicio);
+						ejecutaCasoPlanInternetAdvanced(servicio, conn);
 						break;
 				}		
 			}
@@ -101,26 +100,20 @@ public class separacionServicio {
 		System.out.println("Fin del Proceso");		
 	}
 	
-	private static void ejecutaCasoRedIpCu(TipoDTO servicio) throws SQLException {
+	private static void ejecutaCasoRedIpCu(TipoDTO servicio, List<String> listaRedCliente, Connection conn) throws SQLException {
 
-		Connection conn = abreConexion("teleductos");
+//		Connection conn = abreConexion("teleductos");
 		
 		String servicioPrincipalRespalo = esServicioRespaldo(servicio, conn);
 		//String servicioPrincipalRespalo = null;
 		
-		List<String> listaRedCliente = obtieneListaRedCliente(conn);
-		
 		if (!esDireccionOrigenRedCliente(servicio,listaRedCliente,conn)) {
 			
-			if (!esEntronqueOrigen(servicio, conn)) {
-			
-				insertaRedPrivada(null, servicio,"OK",null,"Conexión Privada","10001322",null,"ORIGEN",conn);
+			if (!esEntronqueOrigen(servicio, conn)) {			
+				insertaRedPrivada(null, servicio,"OK",null,"Conexion Privada","10001322",null,"ORIGEN","EnMPLSCU" + servicioPrincipalRespalo,conn);
 				insertaEnlaceMplsFO(servicioPrincipalRespalo, servicio,"OK",null,"Enlace MPLS CU","10001193","47","ORIGEN",conn);
-
-			} else {
-				
-				insertaRedPrivada(null, servicio,"OK",null,"Conexión Privada","10001322",null,"ORIGEN",conn);
-			
+			} else {				
+				insertaRedPrivada(null, servicio,"OK",null,"Conexion Privada","10001322",null,"ORIGEN",null,conn);			
 			}
 			
 		} else {
@@ -130,44 +123,37 @@ public class separacionServicio {
 		if (!esEntronqueDestino(servicio, conn)) {
 			
 			if (!esDireccionDestinoRedCliente(servicio,conn)) {
-				insertaRedPrivada(null, servicio,"OK",null,"Conexión Privada","10001322",null,"DESTINO",conn);
-				insertaEnlaceMplsFO(servicioPrincipalRespalo, servicio,"OK",null,"Enlace MPLS CU","10001193","47","DESTINO",conn);
-				
-			} else {
-				
-				insertaRedPrivada(null, servicio,"OK",null,"Conexión Privada","10001322",null,"DESTINO",conn);
-
+				insertaRedPrivada(null, servicio,"OK",null,"Conexion Privada","10001322",null,"DESTINO","EnMPLSCU" + servicioPrincipalRespalo,conn);
+				insertaEnlaceMplsFO(servicioPrincipalRespalo, servicio,"OK",null,"Enlace MPLS CU","10001193","47","DESTINO",conn);				
+			} else {				
+				insertaRedPrivada(null, servicio,"OK",null,"Conexion Privada","10001322",null,"DESTINO",null,conn);
 			}
 			
-		} else {
-			
+		} else {			
 			insertaEnlaceMplsFO(servicioPrincipalRespalo, servicio,"ERROR","ENLACE MPLS FO CON RED CLIENTE SI EN ORIGEN","Enlace MPLS CU","10001193","47","DESTINO",conn);
-
 		}
 		
 		conn.commit();
-		
-		conn.close();
-		conn = null;		
+//		
+//		conn.close();
+//		conn = null;		
 	}
 	
 
-	private static void ejecutaCasoRedIpFo(TipoDTO servicio) throws SQLException {
+	private static void ejecutaCasoRedIpFo(TipoDTO servicio, List<String> listaRedCliente, Connection conn) throws SQLException {
 
-		Connection conn = abreConexion("teleductos");
+//		Connection conn = abreConexion("teleductos");
 		
 		String servicioPrincipalRespalo = esServicioRespaldo(servicio, conn);
 		//String servicioPrincipalRespalo = null;
 		
-		List<String> listaRedCliente = obtieneListaRedCliente(conn);
-		
 		if (!esDireccionOrigenRedCliente(servicio,listaRedCliente,conn)) {
 			
 			if (!esEntronqueOrigen(servicio, conn)) {
-				insertaRedPrivada(null, servicio,"OK",null,"Conexión Privada","10001322",null,"ORIGEN",conn);
+				insertaRedPrivada(null, servicio,"OK",null,"Conexion Privada","10001322",null,"ORIGEN","EnMPLSFO" + servicioPrincipalRespalo,conn);
 				insertaEnlaceMplsFO(servicioPrincipalRespalo, servicio,"OK",null,"Enlace MPLS FO","10000045","46","ORIGEN",conn);
 			} else {
-				insertaRedPrivada(null, servicio,"OK",null,"Conexión Privada","10001322",null,"ORIGEN",conn);
+				insertaRedPrivada(null, servicio,"OK",null,"Conexion Privada","10001322",null,"ORIGEN",null,conn);
 			}
 			
 		} else {
@@ -177,32 +163,25 @@ public class separacionServicio {
 		if (!esEntronqueDestino(servicio, conn)) {
 			
 			if (!esDireccionDestinoRedCliente(servicio,conn)) {
-				insertaRedPrivada(null, servicio,"OK",null,"Conexión Privada","10001322",null,"DESTINO",conn);
-				insertaEnlaceMplsFO(servicioPrincipalRespalo, servicio,"OK",null,"Enlace MPLS FO","10000045","46","DESTINO",conn);
-				
-			} else {
-				
-				insertaRedPrivada(null, servicio,"OK",null,"Conexión Privada","10001322",null,"DESTINO",conn);
-
+				insertaRedPrivada(null, servicio,"OK",null,"Conexion Privada","10001322",null,"DESTINO","EnMPLSFO" + servicioPrincipalRespalo,conn);
+				insertaEnlaceMplsFO(servicioPrincipalRespalo, servicio,"OK",null,"Enlace MPLS FO","10000045","46","DESTINO",conn);				
+			} else {				
+				insertaRedPrivada(null, servicio,"OK",null,"Conexion Privada","10001322",null,"DESTINO",null,conn);
 			}
 			
-		} else {
-			
+		} else {			
 			insertaEnlaceMplsFO(servicioPrincipalRespalo, servicio,"ERROR","ENLACE MPLS FO CON RED CLIENTE SI EN ORIGEN","Enlace MPLS FO","10000045","46","DESTINO",conn);
-
 		}
 		
 		conn.commit();
 		
-		conn.close();
-		conn = null;
+//		conn.close();
+//		conn = null;
 	}
 
 
 	private static void insertaRedPrivada(String codServPrincipal, TipoDTO servicio, String estado, String descripcion, String producto,
-			String offering, String codProducto, String origenDestino, Connection conn) {
-
-		//System.out.println("insertaRedPrivada");
+			String offering, String codProducto, String origenDestino, String accessId, Connection conn) {
 		
 		try {
 			
@@ -228,6 +207,7 @@ public class separacionServicio {
 				"         md1.direccion,\n" + 
 				"         ?,\n" + 
 				"         ?,\n" + 
+				"         ?,\n" +
 				"         ?,\n" +
 				"         ?\n" + 
 				"    From TELEDUCTOS.SERVICIO    s,\n" + 
@@ -279,7 +259,9 @@ public class separacionServicio {
 				stmt.setString(8, "");
 			}
 			
-			stmt.setString(9, servicio.getCodValor());
+			stmt.setString(9, accessId);
+			
+			stmt.setString(10, servicio.getCodValor());
 		
 			stmt.executeUpdate();
 			
@@ -527,33 +509,29 @@ public class separacionServicio {
 	}
 
 
-	private static void ejecutaCasoMall(TipoDTO servicio) throws SQLException {
+	private static void ejecutaCasoMall(TipoDTO servicio, Connection conn) throws SQLException {
 
 		String nombreOffering = "Plan Internet Mall";
 		String offering ="20000916";
 		
-		Connection conn = abreConexion("teleductos");
+//		Connection conn = abreConexion("teleductos");
 		
-		if (!esEntronqueDestino(servicio,conn)) {
-			
-			insertaPlanLogicoPlanMall(servicio,"OK",null,nombreOffering,offering,servicio.getValor(),conn);
-			insertaEnlaceMplsMall(servicio,"OK",null,"Enlace MPLS Mall","10001255","1662",conn);
-			
-		} else {
-			
-			insertaPlanLogicoPlanMall(servicio,"ERROR","DESTINO ES ENTRONQUE",nombreOffering,offering,servicio.getValor(),conn);
-			insertaEnlaceMplsMall(servicio,"ERROR","DESTINO ES ENTRONQUE","Enlace MPLS Mall","10001255","1662",conn);
-			
+		if (!esEntronqueDestino(servicio,conn)) {			
+			insertaPlanLogicoPlanMall(servicio,"OK",null,nombreOffering,offering,servicio.getValor(),"EnMPLSMall" + servicio.getCodValor(),conn);
+			insertaEnlaceMplsMall(servicio,"OK",null,"Enlace MPLS Mall","10001255","1662",conn);			
+		} else {			
+			insertaPlanLogicoPlanMall(servicio,"ERROR","ERROR EN APERTURA",nombreOffering,offering,servicio.getValor(),"EnMPLSMall" + servicio.getCodValor(),conn);
+			insertaEnlaceMplsMall(servicio,"ERROR","DESTINO ES ENTRONQUE","Enlace MPLS Mall","10001255","1662",conn);			
 		}	
 		
 		conn.commit();
-		
-		conn.close();
-		conn = null;		
+//		
+//		conn.close();
+//		conn = null;		
 	}
 
 	private static void insertaPlanLogicoPlanMall(TipoDTO servicio, String estado, String  descripcion, String producto,
-			String offering, String codProducto, Connection conn) {
+			String offering, String codProducto, String accessId, Connection conn) {
 
 		//System.out.println("insertaPlanLogicoPlanMall");
 		
@@ -577,7 +555,8 @@ public class separacionServicio {
 				"         ? migration_id,\n" + 
 				"         ?,\n" + 
 				"         ?,\n" +
-				"         null\n" + 
+				"         null,\n" +
+				"         ?\n" + 
 				"    From TELEDUCTOS.SERVICIO    s,\n" + 
 				"         COMUN.MAE_DIRECCIONES  md1\n" + 
 				"   Where \n" + 
@@ -593,7 +572,8 @@ public class separacionServicio {
 			stmt.setString(3, offering);
 			stmt.setString(4, estado);
 			stmt.setString(5, descripcion);
-			stmt.setString(6, servicio.getCodValor());
+			stmt.setString(6, accessId);
+			stmt.setString(7, servicio.getCodValor());
 		
 			stmt.executeUpdate();
 			
@@ -608,23 +588,23 @@ public class separacionServicio {
 	}
 
 
-	private static void ejecutaCasoRedIpUtp(TipoDTO servicio) throws SQLException {
+	private static void ejecutaCasoRedIpUtp(TipoDTO servicio, Connection conn) throws SQLException {
 		
-		Connection conn = abreConexion("teleductos");
+//		Connection conn = abreConexion("teleductos");
 		
-		insertaPlanLogicoMall(servicio,"OK",null,"Red Privada Mall (VLAN)","10001433",null,conn);
+		insertaPlanLogicoMall(servicio,"OK",null,"Red Privada Mall (VLAN)","10001433",null,"EnMPLSMall" + servicio.getCodValor(),conn);
 		insertaEnlaceMplsMall(servicio,"OK",null,"Enlace MPLS Mall","10001255","1662",conn);
 		
 		conn.commit();
 		
-		conn.close();
-		conn = null;
+//		conn.close();
+//		conn = null;
 	}
 	
 	
 
 	private static void insertaPlanLogicoMall(TipoDTO servicio, String estado, String  descripcion, String producto,
-			String offering, String codProducto, Connection conn) {
+			String offering, String codProducto, String accessId, Connection conn) {
 		
 		//System.out.println("insertaPlanLogicoMall");
 		
@@ -648,7 +628,8 @@ public class separacionServicio {
 				"         ? migration_id,\n" + 
 				"         ?,\n" + 
 				"         ?,\n" +
-				"         null\n" + 
+				"         null,\n" +
+				"         ?\n" + 
 				"    From TELEDUCTOS.SERVICIO    s,\n" + 
 				"         COMUN.MAE_DIRECCIONES  md1\n" + 
 				"   Where \n" + 
@@ -664,7 +645,8 @@ public class separacionServicio {
 			stmt.setString(3, offering);
 			stmt.setString(4, estado);
 			stmt.setString(5, descripcion);
-			stmt.setString(6, servicio.getCodValor());
+			stmt.setString(6, accessId);
+			stmt.setString(7, servicio.getCodValor());
 		
 			stmt.executeUpdate();
 			
@@ -737,210 +719,211 @@ public class separacionServicio {
 	}
 
 
-	private static void ejecutaCasoPlanDatacenter(TipoDTO servicio) throws SQLException {
+	private static void ejecutaCasoPlanDatacenter(TipoDTO servicio, Connection conn) throws SQLException {
 		
-		Connection conn = abreConexion("teleductos");
+//		Connection conn = abreConexion("teleductos");
 		
 		if (!esEntronqueDestino(servicio,conn)) {
 			
-			insertaPlanLogico(servicio,"OK",null,"Plan Internet Datacenter","20000739","66",conn);
-			
 			if(obtieneMedioInternet(servicio,conn).equals("FO")) {
+				insertaPlanLogico(servicio,"OK",null,"Plan Internet Datacenter","20000739","66","EnMPLSFO" + servicio.getCodValor(),conn);
 				insertaEnlaceMpls(servicio,"OK",null,"Enlace MPLS FO","10000045","66","DESTINO",conn);
 			} else if(obtieneMedioInternet(servicio,conn).equals("CU")) {
+				insertaPlanLogico(servicio,"OK",null,"Plan Internet Datacenter","20000739","66","EnMPLSCU" + servicio.getCodValor(),conn);
 				insertaEnlaceMpls(servicio,"OK",null,"Enlace MPLS CU","10002295","66","DESTINO",conn);
 			} else {
+				insertaPlanLogico(servicio,"ERROR","ERROR EN APERTURA","Plan Internet Datacenter","20000739","66",null,conn);
 				insertaEnlaceMpls(servicio,"ERROR","MEDIO DEL PRODUCTO NO ENCONTRADO","66",null,null,"DESTINO",conn);
 			}
 
 		} else {
-			
-			insertaPlanLogico(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Plan Internet Datacenter","20000739","66",conn);
 
 			if(obtieneMedioInternet(servicio,conn).equals("FO")) {
+				insertaPlanLogico(servicio,"ERROR","ERROR EN APERTURA","Plan Internet Datacenter","20000739","66","EnMPLSFO" + servicio.getCodValor(),conn);
 				insertaEnlaceMpls(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Enlace MPLS FO","10000045","66","DESTINO",conn);
 			} else if(obtieneMedioInternet(servicio,conn).equals("CU")) {
+				insertaPlanLogico(servicio,"ERROR","ERROR EN APERTURA","Plan Internet Datacenter","20000739","66","EnMPLSCU" + servicio.getCodValor(),conn);
 				insertaEnlaceMpls(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Enlace MPLS CU","10002295","66","DESTINO",conn);
 			} else {
+				insertaPlanLogico(servicio,"ERROR","ERROR EN APERTURA","Plan Internet Datacenter","20000739","66",null,conn);
 				insertaEnlaceMpls(servicio,"ERROR","MEDIO DEL PRODUCTO NO ENCONTRADO",null,null,"66","DESTINO",conn);
 			}
 		}	
 		
 		conn.commit();
 		
-		conn.close();
-		conn = null;
+//		conn.close();
+//		conn = null;
 	}
 	
-	private static void ejecutaCasoIPTVEmpresas(TipoDTO servicio) throws SQLException {
+	private static void ejecutaCasoIPTVEmpresas(TipoDTO servicio, Connection conn) throws SQLException {
 		
-		Connection conn = abreConexion("teleductos");
+//		Connection conn = abreConexion("teleductos");
 		
 		if (!esEntronqueDestino(servicio,conn)) {
 			
-			insertaPlanLogico(servicio,"OK",null,"Plan Internet Datacenter","20000739","1902",conn);
-			
 			if(obtieneMedioInternet(servicio,conn).equals("FO")) {
+				insertaPlanLogico(servicio,"OK",null,"Plan Internet Datacenter","20000739","1902","EnMPLSFO" + servicio.getCodValor(),conn);
 				insertaEnlaceMpls(servicio,"OK",null,"Enlace MPLS FO","10000045","1902","DESTINO",conn);
 			} else if(obtieneMedioInternet(servicio,conn).equals("CU")) {
+				insertaPlanLogico(servicio,"OK",null,"Plan Internet Datacenter","20000739","1902","EnMPLSCU" + servicio.getCodValor(),conn);
 				insertaEnlaceMpls(servicio,"OK",null,"Enlace MPLS CU","10002295","1902","DESTINO",conn);
 			} else {
+				insertaPlanLogico(servicio,"ERROR","ERROR EN APERTURA","Plan Internet Datacenter","20000739","1902",null,conn);
 				insertaEnlaceMpls(servicio,"ERROR","MEDIO DEL PRODUCTO NO ENCONTRADO","1902",null,null,"DESTINO",conn);
 			}
 
 		} else {
-			
-			insertaPlanLogico(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Plan Internet Datacenter","20000739","1902",conn);
 
 			if(obtieneMedioInternet(servicio,conn).equals("FO")) {
+				insertaPlanLogico(servicio,"ERROR","ERROR EN APERTURA","Plan Internet Datacenter","20000739","1902","EnMPLSFO" + servicio.getCodValor(),conn);
 				insertaEnlaceMpls(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Enlace MPLS FO","10000045","1902","DESTINO",conn);
 			} else if(obtieneMedioInternet(servicio,conn).equals("CU")) {
+				insertaPlanLogico(servicio,"ERROR","ERROR EN APERTURA","Plan Internet Datacenter","20000739","1902","EnMPLSCU" + servicio.getCodValor(),conn);
 				insertaEnlaceMpls(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Enlace MPLS CU","10002295","1902","DESTINO",conn);
 			} else {
+				insertaPlanLogico(servicio,"ERROR","ERROR EN APERTURA","Plan Internet Datacenter","20000739","1902",null,conn);
 				insertaEnlaceMpls(servicio,"ERROR","MEDIO DEL PRODUCTO NO ENCONTRADO",null,null,"1902","DESTINO",conn);
 			}
 		}	
 		
 		conn.commit();
 		
-		conn.close();
-		conn = null;
+//		conn.close();
+//		conn = null;
 	}
 	
-	private static void ejecutaCasoPlanInternetAdvanced(TipoDTO servicio) throws SQLException {
+	private static void ejecutaCasoPlanInternetAdvanced(TipoDTO servicio, Connection conn) throws SQLException {
 		
-		Connection conn = abreConexion("teleductos");
+//		Connection conn = abreConexion("teleductos");
 		
-		if (!esEntronqueDestino(servicio,conn) && "FO".equals(obtieneValorMedio(servicio, conn))) {
-			
-			insertaPlanLogico(servicio,"OK",null,"Plan Internet Datacenter","20000739","2782",conn);
-			
+		if (!esEntronqueDestino(servicio,conn) && "FO".equals(obtieneValorMedio(servicio, conn))) {			
+			insertaPlanLogico(servicio,"OK",null,"Plan Internet Datacenter","20000739","2782","EnMPLSFO" + servicio.getCodValor(),conn);			
 			insertaEnlaceMpls(servicio,"OK",null,"Enlace MPLS FO","10000045","2782","DESTINO",conn);
-
-		} else if(esEntronqueDestino(servicio,conn) && "FO".equals(obtieneValorMedio(servicio, conn))){
-			
-			insertaPlanLogico(servicio,"OK",null,"Plan Internet Datacenter","20000739","2782",conn);
-			
-		} else if("GPON".equals(obtieneValorMedio(servicio, conn))){
-			
-			insertaPlanLogico(servicio,"OK",null,"Plan Internet Datacenter","20000739","2782",conn);
-			
-		} else {
-			
-			insertaPlanLogico(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Plan Internet Datacenter","20000739","2782",conn);
+		} else if(esEntronqueDestino(servicio,conn) && "FO".equals(obtieneValorMedio(servicio, conn))){			
+			insertaPlanLogico(servicio,"OK",null,"Plan Internet Datacenter","20000739","2782","EnMPLSFO" + servicio.getCodValor(),conn);			
+		} else if("GPON".equals(obtieneValorMedio(servicio, conn))){			
+			insertaPlanLogico(servicio,"OK",null,"Plan Internet Datacenter","20000739","2782",null,conn);			
+		} else {			
+			insertaPlanLogico(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Plan Internet Datacenter","20000739","2782",null,conn);
 		}	
 		
 		conn.commit();
-		
-		conn.close();
-		conn = null;
+//		
+//		conn.close();
+//		conn = null;
 	}
 
-	private static void ejecutaCasoInternetEmprendedor(TipoDTO servicio) throws SQLException {
+	private static void ejecutaCasoInternetEmprendedor(TipoDTO servicio, Connection conn) throws SQLException {
 
-		Connection conn = abreConexion("teleductos");
+//		Connection conn = abreConexion("teleductos");
 		
 		if (!esEntronqueDestino(servicio,conn)) {
 			
-			insertaPlanLogico(servicio,"OK",null,"Plan Internet Emprendedor","20000023","63",conn);
-			
 			if(obtieneMedioInternet(servicio,conn).equals("FO")) {
+				insertaPlanLogico(servicio,"OK",null,"Plan Internet Emprendedor","20000023","63","EnMPLSFO" + servicio.getCodValor(),conn);
 				insertaEnlaceMpls(servicio,"OK",null,"Enlace MPLS FO","10000045","63","DESTINO",conn);
 			} else if(obtieneMedioInternet(servicio,conn).equals("CU")) {
+				insertaPlanLogico(servicio,"OK",null,"Plan Internet Emprendedor","20000023","63","EnMPLSCU" + servicio.getCodValor(),conn);
 				insertaEnlaceMpls(servicio,"OK",null,"Enlace MPLS CU","10002295","63","DESTINO",conn);
 			} else {
+				insertaPlanLogico(servicio,"ERROR","ERROR EN APERTURA","Plan Internet Emprendedor","20000023","63",null,conn);
 				insertaEnlaceMpls(servicio,"ERROR","MEDIO DEL PRODUCTO NO ENCONTRADO",null,null,"63","DESTINO",conn);
 			}
 
 		} else {
 			
-			insertaPlanLogico(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Plan Internet Emprendedor","20000023","63",conn);
+			TipoDTO servAsociado = obtieneServicioAsociado(conn, servicio);
 
-			if(obtieneMedioInternet(servicio,conn).equals("FO")) {
-				insertaEnlaceMpls(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Enlace MPLS FO","10000045","63","DESTINO",conn);
-			} else if(obtieneMedioInternet(servicio,conn).equals("CU")) {
-				insertaEnlaceMpls(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Enlace MPLS CU","10002295","63","DESTINO",conn);
-			} else {
-				insertaEnlaceMpls(servicio,"ERROR","MEDIO DEL PRODUCTO NO ENCONTRADO",null,null,"63","DESTINO",conn);
+			if(servAsociado == null){
+				insertaPlanLogico(servicio,"ERROR","ERROR EN APERTURA","Plan Internet Emprendedor","20000023","63",null,conn);
+				insertaEnlaceMpls(servicio,"ERROR","DESTINO NO ES ENTRONQUE Y SERVICIO ASOCIADO NO ES RED_IP",null,null,"63","DESTINO",conn);
+			} else if(servAsociado.getValor().equals("" + Constantes.RED_IP_FO)){
+				insertaPlanLogico(servicio,"OK",null,"Plan Internet Emprendedor","20000023","63","EnMPLSFO" + servAsociado.getCodValor(),conn);
+				insertaEnlaceMpls(servAsociado,"OK",null,"Enlace MPLS FO","10000045","63","DESTINO",conn);
+			} else if(servAsociado.getValor().equals("" + Constantes.RED_IP_CU)){
+				insertaPlanLogico(servicio,"OK",null,"Plan Internet Emprendedor","20000023","63","EnMPLSCU" + servAsociado.getCodValor(),conn);
+				insertaEnlaceMpls(servAsociado,"OK",null,"Enlace MPLS CU","10002295","63","DESTINO",conn);
 			}
 		}
 		
 		conn.commit();
-		
-		conn.close();
-		conn = null;
+//		
+//		conn.close();
+//		conn = null;
 	}
 
-	private static void ejecutaCasoInternetGandesClientes(TipoDTO servicio) throws SQLException {
+	private static void ejecutaCasoInternetGandesClientes(TipoDTO servicio, Connection conn) throws SQLException {
 
-		Connection conn = abreConexion("teleductos");
+//		Connection conn = abreConexion("teleductos");
 		
 		if (!esEntronqueDestino(servicio,conn)) {
 			
-			insertaPlanLogico(servicio,"OK",null,"Plan Internet Grandes Clientes","20000796","1542",conn);
-			
-			if(obtieneMedioInternet(servicio,conn).equals("FO")) {
-				insertaEnlaceMpls(servicio,"OK",null,"Enlace MPLS FO","10000045","1542","DESTINO",conn);
-			} else if(obtieneMedioInternet(servicio,conn).equals("CU")) {
-				insertaEnlaceMpls(servicio,"OK",null,"Enlace MPLS CU","10002295","1542","DESTINO",conn);
-			} else {
-				insertaEnlaceMpls(servicio,"ERROR","MEDIO DEL PRODUCTO NO ENCONTRADO",null,null,"1542","DESTINO",conn);
-			}
+			/*Todas las velocidades nacionales del producto son mayor a 2 Mbps*/
+			insertaPlanLogico(servicio,"OK",null,"Plan Internet Grandes Clientes","20000796","1542","EnMPLSFO" + servicio.getCodValor(),conn);
+			insertaEnlaceMpls(servicio,"OK",null,"Enlace MPLS FO","10000045","1542","DESTINO",conn);
 
 		} else {
 			
-			insertaPlanLogico(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Plan Internet Grandes Clientes","20000796","1542",conn);
+			TipoDTO servAsociado = obtieneServicioAsociado(conn, servicio);
 
-			if(obtieneMedioInternet(servicio,conn).equals("FO")) {
-				insertaEnlaceMpls(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Enlace MPLS FO","10000045","1542","DESTINO",conn);
-			} else if(obtieneMedioInternet(servicio,conn).equals("CU")) {
-				insertaEnlaceMpls(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Enlace MPLS CU","10002295","1542","DESTINO",conn);
-			} else {
-				insertaEnlaceMpls(servicio,"ERROR","MEDIO DEL PRODUCTO NO ENCONTRADO",null,null,"1542","DESTINO",conn);
+			if(servAsociado == null){
+				insertaPlanLogico(servicio,"ERROR","ERROR EN APERTURA","Plan Internet Grandes Clientes","20000796","1542",null,conn);
+				insertaEnlaceMpls(servicio,"ERROR","DESTINO NO ES ENTRONQUE Y SERVICIO ASOCIADO NO ES RED_IP",null,null,"1542","DESTINO",conn);
+			} else if(servAsociado.getValor().equals("" + Constantes.RED_IP_FO)){
+				insertaPlanLogico(servicio,"OK",null,"Plan Internet Grandes Clientes","20000796","1542","EnMPLSFO" + servAsociado.getCodValor(),conn);
+				insertaEnlaceMpls(servAsociado,"OK",null,"Enlace MPLS FO","10000045","1542","DESTINO",conn);
+			} else if(servAsociado.getValor().equals("" + Constantes.RED_IP_CU)){
+				insertaPlanLogico(servicio,"OK",null,"Plan Internet Grandes Clientes","20000796","1542","EnMPLSCU" + servAsociado.getCodValor(),conn);
+				insertaEnlaceMpls(servAsociado,"OK",null,"Enlace MPLS CU","10002295","1542","DESTINO",conn);
 			}
 		}
 		
 		conn.commit();
-		
-		conn.close();
-		conn = null;	
+//		
+//		conn.close();
+//		conn = null;	
 	}
 
-	private static void ejecutaCasoInternetEmpresa(TipoDTO servicio) throws SQLException {
+	private static void ejecutaCasoInternetEmpresa(TipoDTO servicio, Connection conn) throws SQLException {
 
 		// Enlace MPLS CU
 		
-		Connection conn = abreConexion("teleductos");
+//		Connection conn = abreConexion("teleductos");
 		
 		if (!esEntronqueDestino(servicio,conn)) {
 			
-			insertaPlanLogico(servicio,"OK",null,"Plan Internet Empresa","20000665","61",conn);
-			
 			if(obtieneMedioInternet(servicio,conn).equals("FO")) {
+				insertaPlanLogico(servicio,"OK",null,"Plan Internet Empresa","20000665","61","EnMPLSFO" + servicio.getCodValor(),conn);
 				insertaEnlaceMpls(servicio,"OK",null,"Enlace MPLS FO","10000045","61","DESTINO",conn);
 			} else if(obtieneMedioInternet(servicio,conn).equals("CU")) {
+				insertaPlanLogico(servicio,"OK",null,"Plan Internet Empresa","20000665","61", "EnMPLSCU" + servicio.getCodValor(),conn);
 				insertaEnlaceMpls(servicio,"OK",null,"Enlace MPLS CU","10002295","61","DESTINO",conn);
 			} else {
+				insertaPlanLogico(servicio,"ERROR","ERROR EN APERTURA","Plan Internet Empresa","20000665","61",null,conn);
 				insertaEnlaceMpls(servicio,"ERROR","MEDIO DEL PRODUCTO NO ENCONTRADO",null,null,"61","DESTINO",conn);
 			}
 
 		} else {
 			
-			insertaPlanLogico(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Plan Internet Empresa","20000665","61",conn);
+			TipoDTO servAsociado = obtieneServicioAsociado(conn, servicio);
 
-			if(obtieneMedioInternet(servicio,conn).equals("FO")) {
-				insertaEnlaceMpls(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Enlace MPLS FO","10000045","61","DESTINO",conn);
-			} else if(obtieneMedioInternet(servicio,conn).equals("CU")) {
-				insertaEnlaceMpls(servicio,"ERROR","DESTINO NO ES ENTRONQUE","Enlace MPLS CU","10002295","61","DESTINO",conn);
-			} else {
-				insertaEnlaceMpls(servicio,"ERROR","MEDIO DEL PRODUCTO NO ENCONTRADO",null,null,"61","DESTINO",conn);
-			}	
+			if(servAsociado == null){
+				insertaPlanLogico(servicio,"ERROR","ERROR EN APERTURA","Plan Internet Empresa","20000665","61",null,conn);
+				insertaEnlaceMpls(servicio,"ERROR","DESTINO NO ES ENTRONQUE Y SERVICIO ASOCIADO NO ES RED_IP",null,null,"61","DESTINO",conn);
+			} else if(servAsociado.getValor().equals("" + Constantes.RED_IP_FO)){
+				insertaPlanLogico(servicio,"OK",null,"Plan Internet Empresa","20000665","61","EnMPLSFO" + servAsociado.getCodValor(),conn);
+				insertaEnlaceMpls(servAsociado,"OK",null,"Enlace MPLS FO","10000045","61","DESTINO",conn);
+			} else if(servAsociado.getValor().equals("" + Constantes.RED_IP_CU)){
+				insertaPlanLogico(servicio,"OK",null,"Plan Internet Empresa","20000665","61","EnMPLSCU" + servAsociado.getCodValor(),conn);
+				insertaEnlaceMpls(servAsociado,"OK",null,"Enlace MPLS CU","10002295","61","DESTINO",conn);
+			}
 		}	
 		
 		conn.commit();
-		
-		conn.close();
-		conn = null;		
+//		
+//		conn.close();
+//		conn = null;		
 	}
 	
 	private static void errorServicioDuplicado(TipoDTO servicio) throws SQLException {
@@ -1065,9 +1048,9 @@ public class separacionServicio {
 		}		
 	}
 
-	private static void insertaPlanLogico(TipoDTO servicio, String estado,String descripcion, String producto, String offering, String codProducto,  Connection conn) {
-
-		//System.out.println("insertaPlanLogico");
+	private static void insertaPlanLogico(TipoDTO servicio, String estado,String descripcion, 
+								String producto, String offering, String codProducto, String accessId, 
+								Connection conn) {
 		
 		try {
 			
@@ -1089,7 +1072,8 @@ public class separacionServicio {
 				"         ? migration_id,\n" + 
 				"         ?,\n" + 
 				"         ?,\n" +
-				"         null\n" + 
+				"         null,\n" +
+				"         ?\n" + 
 				"    From TELEDUCTOS.SERVICIO    s,\n" + 
 				"         COMUN.MAE_DIRECCIONES  md1\n" + 
 				"   Where \n" + 
@@ -1105,7 +1089,8 @@ public class separacionServicio {
 			stmt.setString(3, offering);
 			stmt.setString(4, estado);
 			stmt.setString(5, descripcion);
-			stmt.setString(6, servicio.getCodValor());
+			stmt.setString(6, accessId);
+			stmt.setString(7, servicio.getCodValor());
 		
 			stmt.executeUpdate();
 			
@@ -1114,9 +1099,7 @@ public class separacionServicio {
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
-		}
-	
-	
+		}	
 	}
 
 	private static boolean esEntronqueDestino(TipoDTO servicio, Connection conn) {
@@ -1311,10 +1294,54 @@ public class separacionServicio {
 		return lRedCliente;
 	}
 
-	private static void cargaEquiposCaso1() {
+	private static TipoDTO obtieneServicioAsociado(Connection conn, TipoDTO codServicio) {
 
+		TipoDTO servicioAsociado = null;
 		
+		try {
+			String sql =
+				"select sr.cod_servicio_relacion, pc.cod_producto, pc.nombre " +  
+				" from teleductos.servicio_relacion sr, teleductos.servicio s, " +  
+				"    comun.producto_detalle pd, comun.producto_cliente pc " + 
+				" where sr.cod_servicio = ? " +  
+				" and sr.tipo_relacion = 'ASO' " + 
+				" and sr.cod_servicio_relacion = s.cod_servicio " + 
+				" AND S.ESTADO_SERVICIO NOT IN ('ANULA','RETIRA') " +  
+				" AND S.FEC_FIN_VIGENCIA > SYSDATE " + 
+				" and s.cod_producto_cliente = pd.cod_producto_detalle " + 
+				" and pd.cod_producto = pc.cod_producto";
+			
+			PreparedStatement stmt = conn.prepareStatement(sql);
+			stmt.setString(1, codServicio.getCodValor());
+			
+			ResultSet rs = stmt.executeQuery();			
+	
+			while (rs.next()) {
+				
+				int codProducto = Integer.parseInt(rs.getString("cod_producto"));
+				
+				if(codProducto == Constantes.RED_IP_CU){
+					servicioAsociado = new TipoDTO();
+					servicioAsociado.setCodValor(rs.getString("cod_servicio_relacion"));
+					servicioAsociado.setValor(String.valueOf(Constantes.RED_IP_CU));
+				} else if(codProducto == Constantes.RED_IP_FO) {
+					servicioAsociado = new TipoDTO();
+					servicioAsociado.setCodValor(rs.getString("cod_servicio_relacion"));
+					servicioAsociado.setValor(String.valueOf(Constantes.RED_IP_FO));
+				}
+			}
+			
+			stmt.close();
+			stmt = null;
+			
+			rs.close();
+			rs = null;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} 
 		
+		return servicioAsociado;		
 	}
 
 	private static void limpiaTabla(Connection conn) {
